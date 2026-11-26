@@ -607,12 +607,23 @@ fun ProductCatalogScreen(
         mutableStateOf("")
     }
 
-    // Liste filtrée : recalculée seulement si products ou searchQuery change
-    val filteredProducts = remember(products, searchQuery) {
+    // Filtre "produits en stock uniquement"
+    var showOnlyInStock by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    // Liste filtrée : recalculée seulement si products, searchQuery ou showOnlyInStock change
+    val filteredProducts = remember(products, searchQuery, showOnlyInStock) {
         products.filter { product ->
-            product.title.contains(searchQuery, ignoreCase = true) ||
-                    product.brand.contains(searchQuery, ignoreCase = true) ||
-                    product.category.contains(searchQuery, ignoreCase = true)
+            val matchesSearch =
+                product.title.contains(searchQuery, ignoreCase = true) ||
+                        product.brand.contains(searchQuery, ignoreCase = true) ||
+                        product.category.contains(searchQuery, ignoreCase = true)
+
+            val matchesStock =
+                !showOnlyInStock || product.stock > 0
+
+            matchesSearch && matchesStock
         }
     }
 
@@ -649,6 +660,22 @@ fun ProductCatalogScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+
+        item {
+            Button(
+                onClick = {
+                    showOnlyInStock = !showOnlyInStock
+                }
+            ) {
+                Text(
+                    text = if (showOnlyInStock) {
+                        "Afficher tous les produits"
+                    } else {
+                        "Afficher uniquement les produits en stock"
+                    }
+                )
+            }
         }
 
         item {
