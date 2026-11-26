@@ -836,7 +836,7 @@ fun CategoryRow(
     name = "Catalogue - Dark Theme"
 )
 @Composable
-fun ProductCatalogScreenDarkPreview() {
+fun ProductCatalogContainerDarkPreview() {
     ProductExplorerTheme(darkTheme = true) {
         ProductCatalogContainer(
             products = sampleProducts(),
@@ -851,11 +851,34 @@ fun ProductCatalogScreenDarkPreview() {
     name = "Catalogue - Light Theme"
 )
 @Composable
-fun ProductCatalogScreenLightPreview() {
+fun ProductCatalogContainerLightPreview() {
     ProductExplorerTheme(darkTheme = false) {
         ProductCatalogContainer(
             products = sampleProducts(),
             categories = sampleCategories(),
+            onProductClick = {}
+        )
+    }
+}
+
+// Preview de l'écran stateless seul : on lui donne directement toutes les valeurs
+// (ici le produit 1 est en favori), sans aucun état.
+@Preview(
+    showBackground = true,
+    name = "Catalogue - Stateless"
+)
+@Composable
+fun ProductCatalogScreenStatelessPreview() {
+    ProductExplorerTheme {
+        ProductCatalogScreen(
+            products = sampleProducts(),
+            categories = sampleCategories(),
+            searchQuery = "",
+            onSearchQueryChange = {},
+            showOnlyInStock = false,
+            onToggleStockFilter = {},
+            favoriteProductIds = listOf(1),
+            onFavoriteClick = {},
             onProductClick = {}
         )
     }
