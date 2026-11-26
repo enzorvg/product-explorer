@@ -9,8 +9,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import com.example.productexplorer.ui.theme.ProductExplorerTheme
 
 class MainActivity : ComponentActivity() {
@@ -594,6 +595,61 @@ fun ProductHomeScreenPreview() {
             featuredProduct = sampleProduct(),
             onFeaturedProductClick = {},
         )
+    }
+}
+
+// ViewModel de l'écran catalogue : il garde l'état de l'écran et les actions
+// de l'utilisateur. Ce n'est pas un composable, il ne décrit pas l'interface.
+// Il survit aux recréations de l'écran (par exemple une rotation).
+class ProductCatalogViewModel : ViewModel() {
+
+    // Liste complète : privée, l'interface n'a pas à la modifier
+    private val allProducts: List<ProductUi> = sampleProducts()
+
+    // Catégories : exposées car l'écran les affiche
+    val categories: List<String> = sampleCategories()
+
+    // États observables par Compose. "private set" : lisibles depuis l'interface,
+    // mais seul le ViewModel peut les modifier, via les fonctions ci-dessous.
+    var searchQuery by mutableStateOf("")
+        private set
+
+    var showOnlyInStock by mutableStateOf(false)
+        private set
+
+    var favoriteProductIds by mutableStateOf(listOf<Int>())
+        private set
+
+    // Liste filtrée, calculée à partir de l'état courant.
+    // Compose la relit à chaque recomposition, donc elle est toujours à jour.
+    val filteredProducts: List<ProductUi>
+        get() = allProducts.filter { product ->
+            val matchesSearch =
+                product.title.contains(searchQuery, ignoreCase = true) ||
+                        product.brand.contains(searchQuery, ignoreCase = true) ||
+                        product.category.contains(searchQuery, ignoreCase = true)
+
+            val matchesStock =
+                !showOnlyInStock || product.stock > 0
+
+            matchesSearch && matchesStock
+        }
+
+    // Intentions de l'utilisateur : l'interface les appelle, le ViewModel met à jour l'état.
+    fun onSearchQueryChange(newValue: String) {
+        searchQuery = newValue
+    }
+
+    fun onToggleStockFilter() {
+        showOnlyInStock = !showOnlyInStock
+    }
+
+    fun onFavoriteClick(productId: Int) {
+        favoriteProductIds = if (favoriteProductIds.contains(productId)) {
+            favoriteProductIds - productId
+        } else {
+            favoriteProductIds + productId
+        }
     }
 }
 
