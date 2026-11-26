@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     ProductCatalogContainer(
                         products = sampleProducts(),
+                        categories = sampleCategories(),
                         onProductClick = {
                             // Plus tard : ouvrir le détail du produit
                         },
@@ -601,6 +602,7 @@ fun ProductHomeScreenPreview() {
 @Composable
 fun ProductCatalogContainer(
     products: List<ProductUi>,
+    categories: List<String>,
     onProductClick: (ProductUi) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -647,6 +649,7 @@ fun ProductCatalogContainer(
     // Les données descendent vers l'écran, les événements remontent ici.
     ProductCatalogScreen(
         products = filteredProducts,
+        categories = categories,
         searchQuery = searchQuery,
         onSearchQueryChange = { newValue ->
             searchQuery = newValue
@@ -669,6 +672,7 @@ fun ProductCatalogContainer(
 @Composable
 fun ProductCatalogScreen(
     products: List<ProductUi>,
+    categories: List<String>,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     showOnlyInStock: Boolean,
@@ -733,7 +737,7 @@ fun ProductCatalogScreen(
         }
 
         item {
-            CategoryRow(categories = sampleCategories())
+            CategoryRow(categories = categories)
         }
 
         items(
@@ -836,6 +840,7 @@ fun ProductCatalogScreenDarkPreview() {
     ProductExplorerTheme(darkTheme = true) {
         ProductCatalogContainer(
             products = sampleProducts(),
+            categories = sampleCategories(),
             onProductClick = {}
         )
     }
@@ -850,6 +855,7 @@ fun ProductCatalogScreenLightPreview() {
     ProductExplorerTheme(darkTheme = false) {
         ProductCatalogContainer(
             products = sampleProducts(),
+            categories = sampleCategories(),
             onProductClick = {}
         )
     }
