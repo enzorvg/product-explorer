@@ -612,6 +612,21 @@ fun ProductCatalogScreen(
         mutableStateOf(false)
     }
 
+    // Identifiants des produits favoris, par exemple [1, 3]
+    var favoriteProductIds by rememberSaveable {
+        mutableStateOf(listOf<Int>())
+    }
+
+    // Ajoute ou retire un produit des favoris.
+    // On crée une nouvelle liste à chaque fois pour que Compose détecte le changement.
+    fun toggleFavorite(productId: Int) {
+        favoriteProductIds = if (favoriteProductIds.contains(productId)) {
+            favoriteProductIds - productId
+        } else {
+            favoriteProductIds + productId
+        }
+    }
+
     // Liste filtrée : recalculée seulement si products, searchQuery ou showOnlyInStock change
     val filteredProducts = remember(products, searchQuery, showOnlyInStock) {
         products.filter { product ->
@@ -695,6 +710,10 @@ fun ProductCatalogScreen(
         ) { product ->
             ProductListItem(
                 product = product,
+                isFavorite = favoriteProductIds.contains(product.id),
+                onFavoriteClick = {
+                    toggleFavorite(product.id)
+                },
                 onClick = {
                     onProductClick(product)
                 }
@@ -706,6 +725,8 @@ fun ProductCatalogScreen(
 @Composable
 fun ProductListItem(
     product: ProductUi,
+    isFavorite: Boolean,
+    onFavoriteClick: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -739,8 +760,21 @@ fun ProductListItem(
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = onClick) {
-                Text(text = "Voir le produit")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onClick) {
+                    Text(text = "Voir le produit")
+                }
+                // La carte ne garde pas la liste des favoris :
+                // elle affiche isFavorite et signale le clic avec onFavoriteClick.
+                Button(onClick = onFavoriteClick) {
+                    Text(
+                        text = if (isFavorite) {
+                            "Retirer des favoris"
+                        } else {
+                            "Ajouter aux favoris"
+                        }
+                    )
+                }
             }
         }
     }
