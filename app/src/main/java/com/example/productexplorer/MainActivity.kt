@@ -595,6 +595,16 @@ fun ProductHomeScreenPreview() {
     }
 }
 
+// État complet de l'écran catalogue, regroupé dans un seul objet.
+// Il décrit seulement ce que l'écran affiche : aucune logique ici.
+data class ProductCatalogUiState(
+    val products: List<ProductUi> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val searchQuery: String = "",
+    val showOnlyInStock: Boolean = false,
+    val favoriteProductIds: List<Int> = emptyList()
+)
+
 // ViewModel de l'écran catalogue : il garde l'état de l'écran et les actions
 // de l'utilisateur. Ce n'est pas un composable, il ne décrit pas l'interface.
 // Il survit aux recréations de l'écran (par exemple une rotation).
