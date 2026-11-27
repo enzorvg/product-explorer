@@ -836,41 +836,15 @@ fun CategoryRow(
     }
 }
 
-@Preview(
-    showBackground = true,
-    name = "Catalogue - Dark Theme"
-)
-@Composable
-fun ProductCatalogContainerDarkPreview() {
-    ProductExplorerTheme(darkTheme = true) {
-        ProductCatalogContainer(
-            onProductClick = {}
-        )
-    }
-}
-
+// Previews sur l'écran STATELESS : on lui donne directement les valeurs,
+// sans dépendre du ViewModel. La preview teste l'affichage, pas la logique.
 @Preview(
     showBackground = true,
     name = "Catalogue - Light Theme"
 )
 @Composable
-fun ProductCatalogContainerLightPreview() {
+fun ProductCatalogScreenLightPreview() {
     ProductExplorerTheme(darkTheme = false) {
-        ProductCatalogContainer(
-            onProductClick = {}
-        )
-    }
-}
-
-// Preview de l'écran stateless seul : on lui donne directement toutes les valeurs
-// (ici le produit 1 est en favori), sans aucun état.
-@Preview(
-    showBackground = true,
-    name = "Catalogue - Stateless"
-)
-@Composable
-fun ProductCatalogScreenStatelessPreview() {
-    ProductExplorerTheme {
         ProductCatalogScreen(
             products = sampleProducts(),
             categories = sampleCategories(),
@@ -879,6 +853,27 @@ fun ProductCatalogScreenStatelessPreview() {
             showOnlyInStock = false,
             onToggleStockFilter = {},
             favoriteProductIds = listOf(1),
+            onFavoriteClick = {},
+            onProductClick = {}
+        )
+    }
+}
+
+@Preview(
+    showBackground = true,
+    name = "Catalogue - Dark Theme"
+)
+@Composable
+fun ProductCatalogScreenDarkPreview() {
+    ProductExplorerTheme(darkTheme = true) {
+        ProductCatalogScreen(
+            products = sampleProducts(),
+            categories = sampleCategories(),
+            searchQuery = "audio",
+            onSearchQueryChange = {},
+            showOnlyInStock = true,
+            onToggleStockFilter = {},
+            favoriteProductIds = listOf(2),
             onFavoriteClick = {},
             onProductClick = {}
         )
