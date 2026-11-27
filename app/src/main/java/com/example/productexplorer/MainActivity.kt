@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -42,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.productexplorer.ui.theme.ProductExplorerTheme
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -610,72 +615,96 @@ data class ProductCatalogUiState(
 // Il survit aux recréations de l'écran (par exemple une rotation).
 class ProductCatalogViewModel : ViewModel() {
 
-    // Liste complète : privée, l'interface n'a pas à la modifier
+    // Données complètes : privées, l'interface n'a pas à les modifier
     private val allProducts: List<ProductUi> = sampleProducts()
+    private val allCategories: List<String> = sampleCategories()
 
-    // Catégories : exposées car l'écran les affiche
-    val categories: List<String> = sampleCategories()
+    // État modifiable : privé, seul le ViewModel peut le changer
+    private val _uiState = MutableStateFlow(
+        ProductCatalogUiState(
+            products = allProducts,
+            categories = allCategories
+        )
+    )
 
-    // États observables par Compose. "private set" : lisibles depuis l'interface,
-    // mais seul le ViewModel peut les modifier, via les fonctions ci-dessous.
-    var searchQuery by mutableStateOf("")
-        private set
+    // État en lecture seule : public, l'interface l'observe
+    val uiState: StateFlow<ProductCatalogUiState> = _uiState.asStateFlow()
 
-    var showOnlyInStock by mutableStateOf(false)
-        private set
-
-    var favoriteProductIds by mutableStateOf(listOf<Int>())
-        private set
-
-    // Liste filtrée, calculée à partir de l'état courant.
-    // Compose la relit à chaque recomposition, donc elle est toujours à jour.
-    val filteredProducts: List<ProductUi>
-        get() = allProducts.filter { product ->
+    // Filtre pur : reçoit des valeurs et retourne une nouvelle liste, sans rien modifier
+    private fun filterProducts(searchQuery: String, showOnlyInStock: Boolean): List<ProductUi> {
+        return allProducts.filter { product ->
             val matchesSearch =
                 product.title.contains(searchQuery, ignoreCase = true) ||
                         product.brand.contains(searchQuery, ignoreCase = true) ||
                         product.category.contains(searchQuery, ignoreCase = true)
-
             val matchesStock =
                 !showOnlyInStock || product.stock > 0
-
             matchesSearch && matchesStock
         }
+    }
 
-    // Intentions de l'utilisateur : l'interface les appelle, le ViewModel met à jour l'état.
+    // Intentions de l'utilisateur : chaque action produit une NOUVELLE copie de l'état
+    // avec copy(), et update l'applique. L'UI reçoit automatiquement le nouvel état.
     fun onSearchQueryChange(newValue: String) {
-        searchQuery = newValue
+        _uiState.update { currentState ->
+            currentState.copy(
+                searchQuery = newValue,
+                products = filterProducts(
+                    searchQuery = newValue,
+                    showOnlyInStock = currentState.showOnlyInStock
+                )
+            )
+        }
     }
 
     fun onToggleStockFilter() {
-        showOnlyInStock = !showOnlyInStock
+        _uiState.update { currentState ->
+            val newShowOnlyInStock = !currentState.showOnlyInStock
+
+            currentState.copy(
+                showOnlyInStock = newShowOnlyInStock,
+                products = filterProducts(
+                    searchQuery = currentState.searchQuery,
+                    showOnlyInStock = newShowOnlyInStock
+                )
+            )
+        }
     }
 
     fun onFavoriteClick(productId: Int) {
-        favoriteProductIds = if (favoriteProductIds.contains(productId)) {
-            favoriteProductIds - productId
-        } else {
-            favoriteProductIds + productId
+        _uiState.update { currentState ->
+            val newFavoriteIds =
+                if (currentState.favoriteProductIds.contains(productId)) {
+                    currentState.favoriteProductIds - productId
+                } else {
+                    currentState.favoriteProductIds + productId
+                }
+
+            currentState.copy(
+                favoriteProductIds = newFavoriteIds
+            )
         }
     }
 }
 
 // Passerelle entre le ViewModel et l'écran stateless :
-// il récupère le ViewModel avec viewModel(), lit son état et transmet ses fonctions.
+// collectAsState() observe le StateFlow et recompose l'UI à chaque nouvel état.
 @Composable
 fun ProductCatalogContainer(
     onProductClick: (ProductUi) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProductCatalogViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     ProductCatalogScreen(
-        products = viewModel.filteredProducts,
-        categories = viewModel.categories,
-        searchQuery = viewModel.searchQuery,
+        products = uiState.products,
+        categories = uiState.categories,
+        searchQuery = uiState.searchQuery,
         onSearchQueryChange = viewModel::onSearchQueryChange,
-        showOnlyInStock = viewModel.showOnlyInStock,
+        showOnlyInStock = uiState.showOnlyInStock,
         onToggleStockFilter = viewModel::onToggleStockFilter,
-        favoriteProductIds = viewModel.favoriteProductIds,
+        favoriteProductIds = uiState.favoriteProductIds,
         onFavoriteClick = viewModel::onFavoriteClick,
         onProductClick = onProductClick,
         modifier = modifier
